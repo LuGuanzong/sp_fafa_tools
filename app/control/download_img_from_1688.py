@@ -19,7 +19,14 @@ class DownloadImgFrom1688:
     def __init__(self, html=''):
         self.html_content = html  # 目标1688网页的html代码
         if not self.html_content:
-            self.html_content = input('请输入目标产品1688网页的html代码：')
+            # 文件路径
+            file_path = 'forAli1688'
+            print(f'正在读取{file_path}文件里的html信息')
+            with open(file_path, 'r', encoding='utf-8') as file:
+                # 读取文件的全部内容
+                self.html_content = file.read()
+
+        print(f'html信息读取完毕')
 
         self.base_url = 'https://detail.1688.com'
         self.soup = BeautifulSoup(self.html_content, 'html.parser')  # 解析过的目标1688网页的html代码
@@ -139,12 +146,12 @@ class DownloadImgFrom1688:
                     for chunk in response.iter_content(chunk_size=8192):
                         image_file.write(chunk)
 
-                print(f'Downloaded {file_path}')
+                print(f'Downloaded {file_name}{file_extension}')
             else:
                 print(f'Failed to download {image_url} (status code: {response.status_code})')
                 print('response', response.json())
 
-    def download_imgs_from_1688(self):
+    def download_imgs(self):
         """
         下载主图、sku图、详情图
         :return:
@@ -162,3 +169,5 @@ class DownloadImgFrom1688:
         self.download_from_list(image_urls=self.get_sku_imgs(), prefix='sku')
         # 下载详情图
         self.download_from_list(image_urls=self.get_desc_imgs(), prefix='详情')
+
+        print(f'已完成下载，存储路径在 {self.save_path}')

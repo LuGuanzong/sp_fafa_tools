@@ -7,7 +7,7 @@ def download_product_imgs() -> None:
     :return:
     """
     dlf1688 = DownloadImgFrom1688()
-    dlf1688.download_imgs_from_1688()
+    dlf1688.download_imgs()
 
 
 if __name__ == '__main__':
