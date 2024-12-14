@@ -23,7 +23,7 @@ class DownloadImgFrom1688:
             self.html_content = input('请输入目标产品1688网页的html代码：')
 
         self.soup = BeautifulSoup(self.html_content, 'html.parser')
-        self.folder_name = '图片1688'
+        self.folder_name = 'download'
 
     def get_main_imgs(self) -> list:
         """
