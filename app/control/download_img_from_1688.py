@@ -1,6 +1,8 @@
 import os
+import random
 import re
 import shutil
+import time
 from mimetypes import guess_extension
 from urllib.parse import urljoin
 
@@ -27,15 +29,15 @@ class DownloadImgFrom1688:
         """
         :return: 主图图片链接列表
         """
-        # 找到主图轮播图上一层的div1
-        div1 = self.soup.find('div', class_='img-list-wrapper')
+        # 找到主图轮播图上一层的div
+        img_list_wrapper = self.soup.find('div', class_='img-list-wrapper')
 
         # 如果没有找到div1，返回空列表
-        if div1 is None:
+        if img_list_wrapper is None:
             img_src_list = list()
         else:
             # 找到div1内所有class为detail-gallery-turn-wrapper的div中的img标签
-            img_tags = div1.find_all('img', recursive=False)  # recursive=False确保只在直接子节点中查找
+            img_tags = img_list_wrapper.find_all('img', recursive=True)  # recursive=False确保只在直接子节点中查找
             # 提取每个img标签的src属性，并将其转换为绝对URL（如果需要）
             img_src_list = [urljoin(self.base_url, img['src']) for img in img_tags]
 
@@ -104,14 +106,22 @@ class DownloadImgFrom1688:
             # 创建文件夹
             os.makedirs(self.folder_name)
 
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+
+        print('')
         print(f"--------识别到{prefix}链接一共有{len(image_urls)}条--------")
 
         # 下载每张图片
         for idx, image_url in enumerate(image_urls):
-            file_name = f'{prefix}_{idx + 1}.jpg'
+            file_name = f'{prefix}_{idx + 1}'
 
             # 发送HTTP GET请求获取图片
-            response = requests.get(image_url, stream=True)
+            response = requests.get(image_url, headers=headers, stream=True)
+
+            # 随机延迟
+            delay = random.uniform(1, 3)  # 1到3秒之间的随机延迟
+            time.sleep(delay)
 
             # 检查请求是否成功
             if response.status_code == 200:
@@ -130,6 +140,7 @@ class DownloadImgFrom1688:
                 print(f'Downloaded {file_path}')
             else:
                 print(f'Failed to download {image_url} (status code: {response.status_code})')
+                print('response', response.json())
 
     def download_imgs_from_1688(self):
         """
