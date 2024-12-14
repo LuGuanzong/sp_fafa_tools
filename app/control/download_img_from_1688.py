@@ -4,6 +4,7 @@ import re
 import shutil
 import time
 from mimetypes import guess_extension
+from pathlib import Path
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
@@ -17,13 +18,14 @@ class DownloadImgFrom1688:
 
     def __init__(self, html=''):
         self.html_content = html  # 目标1688网页的html代码
-        self.base_url = 'https://detail.1688.com'
-
         if not self.html_content:
             self.html_content = input('请输入目标产品1688网页的html代码：')
 
-        self.soup = BeautifulSoup(self.html_content, 'html.parser')
-        self.folder_name = 'download'
+        self.base_url = 'https://detail.1688.com'
+        self.soup = BeautifulSoup(self.html_content, 'html.parser')  # 解析过的目标1688网页的html代码
+        self.folder_name = '图片1688'  # 放置下载好的图片的文件夹
+        self.desktop_path = Path(Path.home(), 'Desktop')  # 获取当前用户的桌面路径
+        self.save_path = self.desktop_path / self.folder_name  # 构建完整的文件保存路径
 
     def get_main_imgs(self) -> list:
         """
@@ -102,9 +104,9 @@ class DownloadImgFrom1688:
             image_urls = list()
 
         # 如果文件夹已存在，则清空它
-        if not os.path.exists(self.folder_name):
+        if not os.path.exists(self.save_path):
             # 创建文件夹
-            os.makedirs(self.folder_name)
+            os.makedirs(self.save_path)
 
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
@@ -130,7 +132,7 @@ class DownloadImgFrom1688:
                 file_extension = guess_extension(content_type) or '.jpg'  # 默认为.jpg
 
                 # 构建完整的文件路径
-                file_path = os.path.join(self.folder_name, f'{file_name}{file_extension}')
+                file_path = os.path.join(self.save_path, f'{file_name}{file_extension}')
 
                 # 以二进制模式打开文件并写入响应内容
                 with open(file_path, 'wb') as image_file:
@@ -148,11 +150,11 @@ class DownloadImgFrom1688:
         :return:
         """
         # 如果文件夹已存在，则清空它
-        if os.path.exists(self.folder_name):
-            shutil.rmtree(self.folder_name)
+        if os.path.exists(self.save_path):
+            shutil.rmtree(self.save_path)
 
         # 创建文件夹
-        os.makedirs(self.folder_name)
+        os.makedirs(self.save_path)
 
         # 下载主图
         self.download_from_list(image_urls=self.get_main_imgs(), prefix='主图')
