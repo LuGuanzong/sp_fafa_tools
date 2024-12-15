@@ -63,6 +63,9 @@ class DownloadImgFrom1688:
         for sku_item_wrapper in sku_item_wrappers:
             sku_item_image = sku_item_wrapper.find('div', class_='sku-item-image')
 
+            if not sku_item_image:
+                continue
+
             # 提取style属性中的background URL
             style = sku_item_image.get('style')
 
