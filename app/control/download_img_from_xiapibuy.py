@@ -11,13 +11,13 @@ from bs4 import BeautifulSoup
 import requests
 
 
-class DownloadImgFrom1688:
+class DownloadImgFromXiapi:
     """
-    从1688对应的商品网页下载主图、sku图、详情图
+    从虾皮中国可访问站点对应的商品网页下载主图、sku图
     """
 
     def __init__(self, html=''):
-        self.html_content = html  # 目标1688网页的html代码
+        self.html_content = html  # 目标虾皮网页的html代码
         if not self.html_content:
             # html源文件路径
             file_path = 'forUse'
@@ -28,9 +28,9 @@ class DownloadImgFrom1688:
 
         print(f'html信息读取完毕')
 
-        self.base_url = 'https://detail.1688.com'
-        self.soup = BeautifulSoup(self.html_content, 'html.parser')  # 解析过的目标1688网页的html代码
-        self.folder_name = '图片1688'  # 放置下载好的图片的文件夹
+        self.base_url = 'https://my.xiapibuy.com'
+        self.soup = BeautifulSoup(self.html_content, 'html.parser')  # 解析过的目标虾皮网页的html代码
+        self.folder_name = '图片虾皮'  # 放置下载好的图片的文件夹
         self.desktop_path = Path(Path.home(), 'Desktop')  # 获取当前用户的桌面路径
         self.save_path = self.desktop_path / self.folder_name  # 构建完整的文件保存路径
 
@@ -38,17 +38,14 @@ class DownloadImgFrom1688:
         """
         :return: 主图图片链接列表
         """
-        # 找到主图轮播图上一层的div
-        img_list_wrapper = self.soup.find('div', class_='img-list-wrapper')
+        # 找到所有主图的元素
+        img_list_wrapper = self.soup.find('source', class_='UkIsx8', type_='image/webp')
 
-        # 如果没有找到div1，返回空列表
         if img_list_wrapper is None:
             img_src_list = list()
         else:
-            # 找到div1内所有class为detail-gallery-turn-wrapper的div中的img标签
-            img_tags = img_list_wrapper.find_all('img', recursive=True)  # recursive=False确保只在直接子节点中查找
             # 提取每个img标签的src属性，并将其转换为绝对URL（如果需要）
-            img_src_list = [urljoin(self.base_url, img['src']) for img in img_tags]
+            img_src_list = [urljoin(self.base_url, img['srcset']) for img in img_list_wrapper]
 
         return img_src_list
 
