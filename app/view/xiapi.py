@@ -1,4 +1,4 @@
-from app.control.download_img_from_xiapi import DownloadImgFromXiapi
+from app.control.download_img_from_xiapibuy import DownloadImgFromXiapi
 
 
 def download_product_imgs() -> None:

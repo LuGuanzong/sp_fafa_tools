@@ -5,8 +5,8 @@ import shutil
 import time
 from mimetypes import guess_extension
 from pathlib import Path
-from urllib.parse import urljoin
 
+from PIL import Image
 from bs4 import BeautifulSoup
 import requests
 
@@ -38,14 +38,26 @@ class DownloadImgFromXiapi:
         """
         :return: 主图图片链接列表
         """
-        # 找到所有主图的元素
-        img_list_wrapper = self.soup.find('source', class_='UkIsx8', type_='image/webp')
+        # 找到主图的dialog
+        dialog_div = self.soup.find('div', class_='NDTw5b')
 
-        if img_list_wrapper is None:
-            img_src_list = list()
-        else:
-            # 提取每个img标签的src属性，并将其转换为绝对URL（如果需要）
-            img_src_list = [urljoin(self.base_url, img['srcset']) for img in img_list_wrapper]
+        # 如果没有主图的dialog，那就要提示需要复制有主图dialog的html
+        if not dialog_div:
+            raise Exception('请先打开主图dialog再复制html')
+
+        # 找到所有主图的元素
+        source_tags = dialog_div.find_all('source', class_='UkIsx8')
+        source_tags = [
+            source_tag for source_tag in source_tags if source_tag['type'] == 'image/webp' and source_tag['srcset']
+        ]
+
+        img_src_list = list()
+
+        if source_tags:
+            for source in source_tags:
+                srcset = source['srcset']
+                url = srcset.split(' ')[0]  # 提取第一段url
+                img_src_list.append(url)
 
         return img_src_list
 
@@ -126,7 +138,14 @@ class DownloadImgFromXiapi:
             file_name = f'{prefix}_{idx + 1}'
 
             # 发送HTTP GET请求获取图片
-            response = requests.get(image_url, headers=headers, stream=True)
+            try:
+                response = requests.get(image_url, headers=headers, stream=True, timeout=30)  # 30s超时
+            except requests.Timeout:
+                print(f'{file_name} 请求超时, url: {image_url}')
+                continue
+            except requests.RequestException as e:
+                print(f'{file_name} 请求发生错误: {e}, url: {image_url}')
+                continue
 
             # 随机延迟
             delay = random.uniform(1, 3)  # 1到3秒之间的随机延迟
@@ -146,7 +165,15 @@ class DownloadImgFromXiapi:
                     for chunk in response.iter_content(chunk_size=8192):
                         image_file.write(chunk)
 
-                print(f'Downloaded {file_name}{file_extension}')
+                # webp文件转换为png文件
+                image = Image.open(file_path)
+                png_file_path = os.path.join(self.save_path, f'{file_name}.png')
+                image.save(png_file_path, 'PNG')
+
+                # 删除webp文件
+                os.remove(file_path)
+
+                print(f'Downloaded {file_name}.png')
             else:
                 print(f'Failed to download {image_url} (status code: {response.status_code})')
                 print('response', response.json())
@@ -166,8 +193,8 @@ class DownloadImgFromXiapi:
         # 下载主图
         self.download_from_list(image_urls=self.get_main_imgs(), prefix='主图')
         # 下载sku图
-        self.download_from_list(image_urls=self.get_sku_imgs(), prefix='sku')
-        # 下载详情图
-        self.download_from_list(image_urls=self.get_desc_imgs(), prefix='详情')
+        # self.download_from_list(image_urls=self.get_sku_imgs(), prefix='sku')
+        # # 下载详情图
+        # self.download_from_list(image_urls=self.get_desc_imgs(), prefix='详情')
 
         print(f'已完成下载，存储路径在 {self.save_path}')
